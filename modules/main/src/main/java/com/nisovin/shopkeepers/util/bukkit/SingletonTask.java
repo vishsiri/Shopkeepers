@@ -2,9 +2,7 @@ package com.nisovin.shopkeepers.util.bukkit;
 
 import java.util.concurrent.TimeUnit;
 
-import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.scheduler.BukkitTask;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import com.nisovin.shopkeepers.api.internal.util.Unsafe;
@@ -65,8 +63,8 @@ public abstract class SingletonTask {
 	private final Object executionLock = new Object();
 
 	private State state = State.NOT_RUNNING;
-	// The Bukkit task asynchronously executing this task. Only relevant for async executions.
-	private @Nullable BukkitTask asyncTask = null;
+	// The scheduler task asynchronously executing this task. Only relevant for async executions.
+	private @Nullable ScheduledTask asyncTask = null;
 	// The (internal) callbacks of the current execution:
 	// Run immediately, possibly asynchronously:
 	private @Nullable Runnable internalCallback = null;
@@ -101,7 +99,7 @@ public abstract class SingletonTask {
 	 * @return <code>true</code> if an execution is in progress
 	 */
 	public final boolean isRunning() {
-		assert Bukkit.isPrimaryThread();
+		assert SchedulerUtils.isMainThread();
 		return (state != State.NOT_RUNNING);
 	}
 
@@ -111,7 +109,7 @@ public abstract class SingletonTask {
 	 * @return <code>true</code> if there is an execution that is currently being post-processed
 	 */
 	public final boolean isPostProcessing() {
-		assert Bukkit.isPrimaryThread();
+		assert SchedulerUtils.isMainThread();
 		return (state == State.SYNC_CALLBACK);
 	}
 
@@ -126,14 +124,14 @@ public abstract class SingletonTask {
 	}
 
 	private boolean isWithinSyncExecution() {
-		assert Bukkit.isPrimaryThread();
+		assert SchedulerUtils.isMainThread() || !plugin.isEnabled();
 		return (state == State.PREPARING)
 				|| (asyncTask == null && state == State.EXECUTING)
 				|| (state == State.SYNC_CALLBACK);
 	}
 
 	private void validateMainThreadAndNotWithinExecution() {
-		Validate.State.isTrue(Bukkit.isPrimaryThread(),
+		Validate.State.isTrue(SchedulerUtils.isMainThread() || !plugin.isEnabled(),
 				"This operation has to be called from the main thread!");
 		if (this.isWithinSyncExecution()) {
 			throw Validate.State.error(
@@ -218,7 +216,19 @@ public abstract class SingletonTask {
 	 * finish.
 	 */
 	public final void awaitExecutions() {
-		this.validateMainThreadAndNotWithinExecution();
+		boolean mainThread = SchedulerUtils.isMainThread();
+		if (mainThread) {
+			this.validateMainThreadAndNotWithinExecution();
+		} else {
+			Validate.State.isTrue(
+					!plugin.isEnabled(),
+					"This operation has to be called from the main thread!"
+			);
+			Validate.State.isTrue(
+					asyncTask == null || state == State.PENDING || state == State.EXECUTING,
+					"This operation is not allowed to be called from within the task's execution!"
+			);
+		}
 		if (asyncTask == null) {
 			// There is no async execution in progress.
 			// Assertion: Consequently, there is also no pending request to run the task again.
@@ -253,6 +263,21 @@ public abstract class SingletonTask {
 				// its sync callback is still pending to be run. We will manually run it here.
 			}
 		}
+		if (!mainThread) {
+			// During Folia/Canvas shutdown, plugin disable may be invoked from the region shutdown
+			// thread. At this point new scheduler work is no longer reliable. If the async save has
+			// not started yet, cancelling it is enough; a fresh save is requested by the caller when
+			// data is still dirty. If it has executed already, we intentionally leave the sync
+			// callback to the scheduler instead of running plugin-state cleanup off-thread.
+			if (state == State.PENDING) {
+				asyncTask = null;
+				state = State.NOT_RUNNING;
+				internalCallback = null;
+				internalSyncCallback = null;
+			}
+			return;
+		}
+
 		// Else: state is PENDING and execution got cancelled:
 		boolean hasExecuted = (state == State.EXECUTING);
 
@@ -377,14 +402,15 @@ public abstract class SingletonTask {
 	 */
 	public abstract class InternalAsyncTask implements Runnable {
 
-		private @Nullable BukkitTask task; // Captured Bukkit task
+		private @Nullable ScheduledTask task; // Captured scheduler task
 
 		protected InternalAsyncTask() {
 		}
 
-		private BukkitTask runTaskAsynchronously() {
-			this.task = Bukkit.getScheduler().runTaskAsynchronously(plugin, this);
-			return task;
+		private ScheduledTask runTaskAsynchronously() {
+			this.task = SchedulerUtils.runAsyncTaskOrOmit(plugin, this);
+			Validate.State.notNull(this.task, "Could not schedule async task!");
+			return Unsafe.assertNonNull(task);
 		}
 
 		@Override
@@ -460,7 +486,7 @@ public abstract class SingletonTask {
 	// asyncTask: The async task executing this method. Null for sync executions.
 	// If the async task got cancelled and another execution has already been started, this may not
 	// match the current value of this class' asyncTask variable.
-	private void executeTask(@Nullable BukkitTask asyncTask) {
+	private void executeTask(@Nullable ScheduledTask asyncTask) {
 		if (asyncTask != null) {
 			// Asynchronous execution:
 			// Requires the lock for coordination with the main thread, and might have been

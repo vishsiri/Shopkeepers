@@ -29,6 +29,7 @@ import org.bukkit.inventory.ItemStack;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import com.nisovin.shopkeepers.SKShopkeepersPlugin;
+import com.nisovin.shopkeepers.util.bukkit.SchedulerUtils;
 import com.nisovin.shopkeepers.api.ShopkeepersPlugin;
 import com.nisovin.shopkeepers.api.internal.util.Unsafe;
 import com.nisovin.shopkeepers.api.shopkeeper.ShopCreationData;
@@ -376,7 +377,7 @@ class CreateListener implements Listener {
 
 					// Manually remove creation item from player's hand after this event is
 					// processed:
-					Bukkit.getScheduler().runTask(plugin, () -> {
+					SchedulerUtils.runAtEntityOrOmit(plugin, player, () -> {
 						ItemStack newItemInMainHand = ItemUtils.decreaseItemAmount(itemInHand, 1);
 						player.getInventory().setItemInMainHand(newItemInMainHand);
 					});
@@ -483,3 +484,4 @@ class CreateListener implements Listener {
 		// TODO Inform the player? (This would require some per-player throttling)
 	}
 }
+

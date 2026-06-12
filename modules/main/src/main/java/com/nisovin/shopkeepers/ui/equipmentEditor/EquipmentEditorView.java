@@ -17,6 +17,7 @@ import org.bukkit.inventory.ItemStack;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import com.nisovin.shopkeepers.api.ShopkeepersPlugin;
+import com.nisovin.shopkeepers.util.bukkit.SchedulerUtils;
 import com.nisovin.shopkeepers.api.util.UnmodifiableItemStack;
 import com.nisovin.shopkeepers.lang.Messages;
 import com.nisovin.shopkeepers.shopkeeper.player.PlaceholderItems;
@@ -194,7 +195,7 @@ public class EquipmentEditorView extends View {
 
 		if (rightClick) {
 			// Clear the equipment slot:
-			Bukkit.getScheduler().runTask(ShopkeepersPlugin.getInstance(), () -> {
+			SchedulerUtils.runAtEntityOrOmit(ShopkeepersPlugin.getInstance(), view.getPlayer(), () -> {
 				if (!this.isOpen() || this.abortIfContextInvalid()) return;
 
 				inventory.setItem(rawSlot, this.toEditorEquipmentItem(equipmentSlot, null));
@@ -207,7 +208,7 @@ public class EquipmentEditorView extends View {
 		if (leftClick && !ItemUtils.isEmpty(cursorClone)) {
 			assert cursorClone != null;
 			// Place the item from the cursor:
-			Bukkit.getScheduler().runTask(ShopkeepersPlugin.getInstance(), () -> {
+			SchedulerUtils.runAtEntityOrOmit(ShopkeepersPlugin.getInstance(), view.getPlayer(), () -> {
 				if (!this.isOpen() || this.abortIfContextInvalid()) return;
 
 				cursorClone.setAmount(1);
@@ -274,3 +275,4 @@ public class EquipmentEditorView extends View {
 		// Nothing to do by default.
 	}
 }
+

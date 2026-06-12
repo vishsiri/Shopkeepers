@@ -21,7 +21,8 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
-import org.bukkit.scheduler.BukkitTask;
+import com.nisovin.shopkeepers.util.bukkit.ScheduledTask;
+import com.nisovin.shopkeepers.util.bukkit.SchedulerUtils;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import com.nisovin.shopkeepers.SKShopkeepersPlugin;
@@ -189,7 +190,7 @@ public class EntityAI implements Listener {
 	// Index for fast removal: Shop object -> EntityData
 	private final Map<BaseEntityShopObject<?>, EntityData> shopObjects = new HashMap<>();
 
-	private @Nullable BukkitTask aiTask = null;
+	private @Nullable ScheduledTask aiTask = null;
 	private boolean currentlyRunning = false;
 
 	// Statistics:
@@ -380,7 +381,7 @@ public class EntityAI implements Listener {
 
 		// Start AI task:
 		int tickPeriod = Settings.entityBehaviorTickPeriod;
-		aiTask = Bukkit.getScheduler().runTaskTimer(
+		aiTask = SchedulerUtils.runTaskTimerOrOmit(
 				plugin,
 				new TickTask(),
 				tickPeriod,
@@ -493,7 +494,7 @@ public class EntityAI implements Listener {
 
 	private void activateNearbyChunksDelayed(Player player) {
 		if (!player.isOnline()) return; // Player is no longer online
-		Bukkit.getScheduler().runTask(plugin, new ActivateNearbyChunksDelayedTask(player));
+		SchedulerUtils.runTaskOrOmit(plugin, new ActivateNearbyChunksDelayedTask(player));
 	}
 
 	private class ActivateNearbyChunksDelayedTask implements Runnable {
@@ -760,3 +761,4 @@ public class EntityAI implements Listener {
 		this.activateNearbyChunksDelayed(player);
 	}
 }
+

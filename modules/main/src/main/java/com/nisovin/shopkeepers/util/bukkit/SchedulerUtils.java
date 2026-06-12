@@ -2,22 +2,34 @@ package com.nisovin.shopkeepers.util.bukkit;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.logging.Logger;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.entity.Entity;
 import org.bukkit.plugin.IllegalPluginAccessException;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitScheduler;
-import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.scheduler.BukkitWorker;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
+import com.nisovin.shopkeepers.api.internal.util.Unsafe;
 import com.nisovin.shopkeepers.util.java.Validate;
+import com.tcoded.folialib.FoliaLib;
+import com.tcoded.folialib.wrapper.task.WrappedTask;
 
 /**
  * Scheduler related utilities.
  */
 public final class SchedulerUtils {
+
+	private static final Map<Plugin, FoliaLib> FOLIA_LIB_INSTANCES = new WeakHashMap<>();
+
+	private static synchronized FoliaLib getFoliaLib(Plugin plugin) {
+		return FOLIA_LIB_INSTANCES.computeIfAbsent(plugin, FoliaLib::new);
+	}
 
 	/**
 	 * Creates an {@link Executor} that executes tasks on the server's main thread using
@@ -69,7 +81,11 @@ public final class SchedulerUtils {
 	 * @return <code>true</code> if currently running on the main thread
 	 */
 	public static boolean isMainThread() {
-		return Bukkit.isPrimaryThread();
+		if (Bukkit.isPrimaryThread()) {
+			return true;
+		}
+		FoliaLib foliaLib = getFoliaLib(com.nisovin.shopkeepers.SKShopkeepersPlugin.getInstance());
+		return foliaLib.isFolia() && foliaLib.getScheduler().isGlobalTickThread();
 	}
 
 	/**
@@ -96,11 +112,11 @@ public final class SchedulerUtils {
 		}
 	}
 
-	public static @Nullable BukkitTask runTaskOrOmit(Plugin plugin, Runnable task) {
+	public static @Nullable ScheduledTask runTaskOrOmit(Plugin plugin, Runnable task) {
 		return runTaskLaterOrOmit(plugin, task, 0L);
 	}
 
-	public static @Nullable BukkitTask runTaskLaterOrOmit(
+	public static @Nullable ScheduledTask runTaskLaterOrOmit(
 			Plugin plugin,
 			Runnable task,
 			long delay
@@ -109,7 +125,11 @@ public final class SchedulerUtils {
 		// Tasks can only be registered while enabled:
 		if (plugin.isEnabled()) {
 			try {
-				return Bukkit.getScheduler().runTaskLater(plugin, task, delay);
+				WrappedTask wrappedTask = getFoliaLib(plugin).getScheduler().runLater(
+						task,
+						Math.max(1L, delay)
+				);
+				return new ScheduledTask(Unsafe.assertNonNull(wrappedTask));
 			} catch (IllegalPluginAccessException e) {
 				// Couldn't register task: The plugin got disabled just now.
 			}
@@ -117,11 +137,11 @@ public final class SchedulerUtils {
 		return null;
 	}
 
-	public static @Nullable BukkitTask runAsyncTaskOrOmit(Plugin plugin, Runnable task) {
+	public static @Nullable ScheduledTask runAsyncTaskOrOmit(Plugin plugin, Runnable task) {
 		return runAsyncTaskLaterOrOmit(plugin, task, 0L);
 	}
 
-	public static @Nullable BukkitTask runAsyncTaskLaterOrOmit(
+	public static @Nullable ScheduledTask runAsyncTaskLaterOrOmit(
 			Plugin plugin,
 			Runnable task,
 			long delay
@@ -130,7 +150,11 @@ public final class SchedulerUtils {
 		// Tasks can only be registered while enabled:
 		if (plugin.isEnabled()) {
 			try {
-				return Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, task, delay);
+				WrappedTask wrappedTask = getFoliaLib(plugin).getScheduler().runLaterAsync(
+						task,
+						Math.max(1L, delay)
+				);
+				return new ScheduledTask(Unsafe.assertNonNull(wrappedTask));
 			} catch (IllegalPluginAccessException e) {
 				// Couldn't register task: The plugin got disabled just now.
 			}
@@ -202,6 +226,101 @@ public final class SchedulerUtils {
 					+ " remaining async tasks active! Disabling anyway now.");
 		}
 		return activeAsyncTasks;
+	}
+
+	public static @Nullable ScheduledTask runTaskTimerOrOmit(
+			Plugin plugin,
+			Runnable task,
+			long delay,
+			long period
+	) {
+		validatePluginTask(plugin, task);
+		if (plugin.isEnabled()) {
+			try {
+				WrappedTask wrappedTask = getFoliaLib(plugin).getScheduler().runTimer(
+						task,
+						Math.max(1L, delay),
+						Math.max(1L, period)
+				);
+				return new ScheduledTask(Unsafe.assertNonNull(wrappedTask));
+			} catch (IllegalPluginAccessException e) {
+				// Couldn't register task: The plugin got disabled just now.
+			}
+		}
+		return null;
+	}
+
+	public static @Nullable ScheduledTask runAtLocationOrOmit(
+			Plugin plugin,
+			Location location,
+			Runnable task
+	) {
+		validatePluginTask(plugin, task);
+		Validate.notNull(location, "location is null");
+		if (plugin.isEnabled()) {
+			try {
+				WrappedTask wrappedTask = getFoliaLib(plugin).getScheduler().runAtLocationLater(
+						location,
+						task,
+						1L
+				);
+				return new ScheduledTask(Unsafe.assertNonNull(wrappedTask));
+			} catch (IllegalPluginAccessException e) {
+				// Couldn't register task: The plugin got disabled just now.
+			}
+		}
+		return null;
+	}
+
+	public static @Nullable ScheduledTask runAtEntityOrOmit(
+			Plugin plugin,
+			Entity entity,
+			Runnable task
+	) {
+		validatePluginTask(plugin, task);
+		Validate.notNull(entity, "entity is null");
+		if (plugin.isEnabled()) {
+			try {
+				WrappedTask wrappedTask = getFoliaLib(plugin).getScheduler().runAtEntityLater(
+						entity,
+						task,
+						1L
+				);
+				return new ScheduledTask(Unsafe.assertNonNull(wrappedTask));
+			} catch (IllegalPluginAccessException e) {
+				// Couldn't register task: The plugin got disabled just now.
+			}
+		}
+		return null;
+	}
+
+	public static @Nullable ScheduledTask runAtEntityTimerOrOmit(
+			Plugin plugin,
+			Entity entity,
+			Runnable task,
+			long delay,
+			long period
+	) {
+		validatePluginTask(plugin, task);
+		Validate.notNull(entity, "entity is null");
+		if (plugin.isEnabled()) {
+			try {
+				WrappedTask wrappedTask = getFoliaLib(plugin).getScheduler().runAtEntityTimer(
+						entity,
+						task,
+						Math.max(1L, delay),
+						Math.max(1L, period)
+				);
+				return new ScheduledTask(Unsafe.assertNonNull(wrappedTask));
+			} catch (IllegalPluginAccessException e) {
+				// Couldn't register task: The plugin got disabled just now.
+			}
+		}
+		return null;
+	}
+
+	public static void cancelTasks(Plugin plugin) {
+		getFoliaLib(plugin).getScheduler().cancelAllTasks();
 	}
 
 	private SchedulerUtils() {

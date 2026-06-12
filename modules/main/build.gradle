@@ -17,6 +17,8 @@ repositories {
 	maven { url = 'https://repo.glaremasters.me/repository/towny/' }
 	// Towny alternative (needs a different group id), VaultAPI
 	maven { url = 'https://jitpack.io' }
+	// FoliaLib
+	maven { url = 'https://repo.tcoded.com/releases' }
 }
 
 configurations {
@@ -44,8 +46,12 @@ dependencies {
 	(compileOnly libs.citizens.main) { transitive = false }
 	compileOnly libs.vault.api
 	compileOnly libs.bstats.bukkit
+	compileOnly libs.folialib
 
 	shaded libs.bstats.bukkit
+	shaded libs.folialib
+	// Include the Paper 1.21.11 compat provider for Folia/Canvas builds produced via shadowJar.
+	shaded project(path: ':shopkeepers-v1_21_R9_paper', configuration: 'remapped')
 }
 
 processResources {
@@ -89,12 +95,19 @@ shadowJar {
 	configureJarTaskWithMavenMetadata(project, it)
 	// No classifier: Replaces the normal classifier-less jar file (if there is one).
 	archiveClassifier = ''
-	configurations = [project.configurations.shaded]
+	configurations = [project.configurations.runtimeClasspath, project.configurations.shaded]
 	/*configurations = [project.configurations.compileClasspath]
 	dependencies {
 		include(dependency(libs.bstats.bukkit.get()))
 	}*/
+	dependencies {
+		include(project(':shopkeepers-api'))
+		include(project(path: ':shopkeepers-v1_21_R9_paper', configuration: 'remapped'))
+		include(dependency(libs.bstats.bukkit.get()))
+		include(dependency(libs.folialib.get()))
+	}
 	relocate 'org.bstats.bukkit', "${project.group}.libs.bstats"
+	relocate 'com.tcoded.folialib', "${project.group}.libs.folialib"
 }
 
 configureShadowArtifacts(project)

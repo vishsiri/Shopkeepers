@@ -17,6 +17,7 @@ import org.bukkit.plugin.Plugin;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import com.nisovin.shopkeepers.SKShopkeepersPlugin;
+import com.nisovin.shopkeepers.util.bukkit.SchedulerUtils;
 import com.nisovin.shopkeepers.api.internal.util.Unsafe;
 import com.nisovin.shopkeepers.api.shopkeeper.Shopkeeper;
 import com.nisovin.shopkeepers.config.Settings;
@@ -180,7 +181,7 @@ public class CitizensShops {
 		citizensListener.onEnable();
 
 		// Delayed to run after shopkeepers and NPCs were loaded:
-		Bukkit.getScheduler().runTaskLater(plugin, new DelayedSetupTask(), 3L);
+		SchedulerUtils.runTaskLaterOrOmit(plugin, new DelayedSetupTask(), 3L);
 
 		// Enabled:
 		citizensShopsEnabled = true;
@@ -489,3 +490,4 @@ public class CitizensShops {
 		return invalidShopkeepers.size();
 	}
 }
+

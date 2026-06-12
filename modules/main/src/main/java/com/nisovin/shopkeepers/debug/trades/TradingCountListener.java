@@ -12,7 +12,8 @@ import org.bukkit.event.player.PlayerStatisticIncrementEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.MerchantInventory;
-import org.bukkit.scheduler.BukkitTask;
+import com.nisovin.shopkeepers.util.bukkit.ScheduledTask;
+import com.nisovin.shopkeepers.util.bukkit.SchedulerUtils;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import com.nisovin.shopkeepers.api.ShopkeepersPlugin;
@@ -51,7 +52,7 @@ public class TradingCountListener implements Listener {
 
 	private @Nullable Player tradingPlayer = null;
 	private int tradeCounter = 0;
-	private @Nullable BukkitTask stopListeningTask = null;
+	private @Nullable ScheduledTask stopListeningTask = null;
 
 	public TradingCountListener(ShopkeepersPlugin plugin) {
 		Validate.notNull(plugin, "plugin is null");
@@ -74,7 +75,7 @@ public class TradingCountListener implements Listener {
 		Log.debug("Listening for non-shopkeeper trades of player " + tradingPlayer.getName()
 				+ " ...");
 		this.tradingPlayer = tradingPlayer;
-		stopListeningTask = Bukkit.getScheduler().runTask(plugin, stopListeningAction);
+		stopListeningTask = SchedulerUtils.runTaskOrOmit(plugin, stopListeningAction);
 	}
 
 	private void stopListeningForTrades() {
@@ -148,3 +149,4 @@ public class TradingCountListener implements Listener {
 				+ ItemUtils.getSimpleRecipeInfo(activeRecipe));
 	}
 }
+

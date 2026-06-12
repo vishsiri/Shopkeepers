@@ -6,7 +6,8 @@ import java.util.function.Consumer;
 import org.bukkit.Bukkit;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.scheduler.BukkitTask;
+import com.nisovin.shopkeepers.util.bukkit.ScheduledTask;
+import com.nisovin.shopkeepers.util.bukkit.SchedulerUtils;
 import org.checkerframework.checker.initialization.qual.UnknownInitialization;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
@@ -74,8 +75,8 @@ public class TradeMerger {
 	private long mergeEndNanos;
 	private long lastMergedTradeNanos;
 
-	private @Nullable BukkitTask mergeDurationTask = null;
-	private @Nullable BukkitTask nextMergeTimeoutTask = null;
+	private @Nullable ScheduledTask mergeDurationTask = null;
+	private @Nullable ScheduledTask nextMergeTimeoutTask = null;
 	// This is set to the lastMergedTradeNanos at the time the nextMergeTimeoutTask is started.
 	private long nextMergeTimeoutStartNanos;
 
@@ -215,7 +216,7 @@ public class TradeMerger {
 		this.endMergeDurationTask();
 
 		// Start a new delayed task that ends the trade merging after a certain maximum duration:
-		mergeDurationTask = Bukkit.getScheduler().runTaskLater(
+		mergeDurationTask = SchedulerUtils.runTaskLaterOrOmit(
 				plugin,
 				new MaxMergeDurationTimeoutTask(),
 				mergeDurationTicks
@@ -272,7 +273,7 @@ public class TradeMerger {
 		assert taskDelayTicks >= 1; // Due to the threshold checked above
 		// Keep track of the timestamp of the last merged trade:
 		nextMergeTimeoutStartNanos = lastMergedTradeNanos;
-		nextMergeTimeoutTask = Bukkit.getScheduler().runTaskLater(
+		nextMergeTimeoutTask = SchedulerUtils.runTaskLaterOrOmit(
 				plugin,
 				new NextMergeTimeoutTask(),
 				taskDelayTicks
@@ -308,3 +309,4 @@ public class TradeMerger {
 		previousTrades = null;
 	}
 }
+

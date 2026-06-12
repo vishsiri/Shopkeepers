@@ -4,7 +4,8 @@ import java.util.function.Predicate;
 
 import org.bukkit.Bukkit;
 import org.bukkit.World;
-import org.bukkit.scheduler.BukkitTask;
+import com.nisovin.shopkeepers.util.bukkit.ScheduledTask;
+import com.nisovin.shopkeepers.util.bukkit.SchedulerUtils;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import com.nisovin.shopkeepers.SKShopkeepersPlugin;
@@ -105,7 +106,7 @@ class WorldSaveDespawner {
 	class RespawnShopkeepersAfterWorldSaveTask implements Runnable {
 
 		private final WorldData worldData;
-		private @Nullable BukkitTask task;
+		private @Nullable ScheduledTask task;
 
 		RespawnShopkeepersAfterWorldSaveTask(WorldData worldData) {
 			assert worldData != null;
@@ -114,7 +115,7 @@ class WorldSaveDespawner {
 
 		void start() {
 			assert !worldData.isWorldSaveRespawnPending();
-			this.task = Bukkit.getScheduler().runTask(plugin, this);
+			this.task = SchedulerUtils.runTaskOrOmit(plugin, this);
 			worldData.setWorldSaveRespawnTask(this);
 		}
 
@@ -155,3 +156,4 @@ class WorldSaveDespawner {
 		}
 	}
 }
+

@@ -8,6 +8,7 @@ softdepend: [Multiverse-Core, My Worlds, Transporter, Towny, WorldGuard, Citizen
 
 main: com.nisovin.shopkeepers.SKShopkeepersPlugin
 api-version: '1.21.5'
+folia-supported: true
 
 commands:
     shopkeeper:

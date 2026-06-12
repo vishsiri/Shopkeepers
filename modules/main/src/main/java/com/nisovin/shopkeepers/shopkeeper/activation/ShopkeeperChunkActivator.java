@@ -16,7 +16,8 @@ import org.bukkit.Server;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
-import org.bukkit.scheduler.BukkitTask;
+import com.nisovin.shopkeepers.util.bukkit.ScheduledTask;
+import com.nisovin.shopkeepers.util.bukkit.SchedulerUtils;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import com.nisovin.shopkeepers.SKShopkeepersPlugin;
@@ -303,7 +304,7 @@ public class ShopkeeperChunkActivator {
 
 		void start() {
 			assert !chunkData.isActive() && !chunkData.isActivationDelayed();
-			BukkitTask task = Bukkit.getScheduler().runTaskLater(
+			ScheduledTask task = SchedulerUtils.runTaskLaterOrOmit(
 					plugin,
 					this,
 					CHUNK_ACTIVATION_DELAY_TICKS
@@ -321,7 +322,7 @@ public class ShopkeeperChunkActivator {
 
 	void activatePendingNearbyChunksDelayed(Player player) {
 		assert player != null;
-		Bukkit.getScheduler().runTask(plugin, new ActivatePendingNearbyChunksTask(player));
+		SchedulerUtils.runTaskOrOmit(plugin, new ActivatePendingNearbyChunksTask(player));
 	}
 
 	private class ActivatePendingNearbyChunksTask implements Runnable {
@@ -688,3 +689,4 @@ public class ShopkeeperChunkActivator {
 		this.deactivateChunk(chunkData);
 	}
 }
+

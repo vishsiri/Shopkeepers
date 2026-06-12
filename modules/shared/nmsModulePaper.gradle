@@ -25,6 +25,25 @@ dependencies {
 	testImplementation libs.asm
 }
 
+[
+		'compileClasspath',
+		'runtimeClasspath',
+		'testCompileClasspath',
+		'testRuntimeClasspath'
+].each { configurationName ->
+	configurations.named(configurationName) {
+		resolutionStrategy.eachDependency { details ->
+		// Some recent Paper dev bundles declare this Adventure dependency without a version.
+			if (details.requested.group == 'net.kyori'
+					&& details.requested.name == 'adventure-text-serializer-ansi'
+					&& !details.requested.version) {
+				details.useVersion '4.25.0'
+				details.because 'Paper dev-bundle metadata omits the Adventure ANSI serializer version.'
+			}
+		}
+	}
+}
+
 // Note: We use Mojang mappings instead of Spigot mappings on Paper: Mojang mappings are usually
 // supported quicker and support for Spigot might be pending removal.
 // Dist module: Using the Mojang mappings requires adding a manifest attribute to the final jar.

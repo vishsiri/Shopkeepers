@@ -7,10 +7,11 @@ import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.scheduler.BukkitTask;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import com.nisovin.shopkeepers.lang.Messages;
+import com.nisovin.shopkeepers.util.bukkit.ScheduledTask;
+import com.nisovin.shopkeepers.util.bukkit.SchedulerUtils;
 import com.nisovin.shopkeepers.util.bukkit.TextUtils;
 
 class ShopCreationItemSelectionTask implements Runnable {
@@ -81,7 +82,7 @@ class ShopCreationItemSelectionTask implements Runnable {
 
 	private final Plugin plugin;
 	private final Player player;
-	private @Nullable BukkitTask bukkitTask = null;
+	private @Nullable ScheduledTask scheduledTask = null;
 
 	// Use the static 'start' factory method.
 	private ShopCreationItemSelectionTask(Plugin plugin, Player player) {
@@ -93,14 +94,14 @@ class ShopCreationItemSelectionTask implements Runnable {
 	private void start() {
 		// Cancel previous task if already active:
 		this.cancel();
-		bukkitTask = Bukkit.getScheduler().runTaskLater(plugin, this, DELAY_TICKS);
+		scheduledTask = SchedulerUtils.runTaskLaterOrOmit(plugin, this, DELAY_TICKS);
 	}
 
 	// Note: Performs no cleanup.
 	private void cancel() {
-		if (bukkitTask != null) {
-			bukkitTask.cancel();
-			bukkitTask = null;
+		if (scheduledTask != null) {
+			scheduledTask.cancel();
+			scheduledTask = null;
 		}
 	}
 
@@ -135,3 +136,4 @@ class ShopCreationItemSelectionTask implements Runnable {
 		);
 	}
 }
+

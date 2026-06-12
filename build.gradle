@@ -428,7 +428,8 @@ def taskListAliases = [
 	'cleanInstall' : ['clean', 'build', 'publishToMavenLocal'],
 	'cleanStaging' : ['clean', 'build', 'publishToMavenLocal', 'publishAllPublicationsToStagingRepository'],
 	'cleanPublish' : ['clean', 'build', 'publishToMavenLocal', 'publishAllPublicationsToStagingRepository', 'gitPublishPush'],
-	'cleanInstallMinimal' : ['clean', ':shopkeepers-api:publishToMavenLocal']
+	'cleanInstallMinimal' : ['clean', ':shopkeepers-api:publishToMavenLocal'],
+	'shadowJar' : [':shopkeepers-main:shadowJar']
 ]
 
 gradle.startParameter.taskNames = gradle.startParameter.taskNames.collect {

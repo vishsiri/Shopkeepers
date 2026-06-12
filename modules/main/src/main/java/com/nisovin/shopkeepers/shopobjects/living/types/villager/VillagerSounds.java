@@ -13,7 +13,8 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.TradeSelectEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.MerchantInventory;
-import org.bukkit.scheduler.BukkitTask;
+import com.nisovin.shopkeepers.util.bukkit.ScheduledTask;
+import com.nisovin.shopkeepers.util.bukkit.SchedulerUtils;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import com.nisovin.shopkeepers.SKShopkeepersPlugin;
@@ -66,7 +67,7 @@ public class VillagerSounds extends TradingListener {
 	private final LivingShopObject shopObject;
 
 	private long lastSoundNanos = System.nanoTime();
-	private @Nullable BukkitTask tradeInteractionTask = null;
+	private @Nullable ScheduledTask tradeInteractionTask = null;
 
 	public VillagerSounds(SKLivingShopObject<? extends AbstractVillager> shopObject) {
 		Validate.notNull(shopObject, "shopObject is null");
@@ -232,7 +233,7 @@ public class VillagerSounds extends TradingListener {
 			// We are already about to process another inventory interaction.
 			return;
 		}
-		tradeInteractionTask = Bukkit.getScheduler().runTask(
+		tradeInteractionTask = SchedulerUtils.runTaskOrOmit(
 				SKShopkeepersPlugin.getInstance(),
 				new ProcessTradeInteractionTask(uiSession)
 		);
@@ -362,3 +363,4 @@ public class VillagerSounds extends TradingListener {
 		this.throttleSounds();
 	}
 }
+

@@ -22,6 +22,7 @@ import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import com.nisovin.shopkeepers.SKShopkeepersPlugin;
+import com.nisovin.shopkeepers.util.bukkit.SchedulerUtils;
 import com.nisovin.shopkeepers.api.ShopkeepersPlugin;
 import com.nisovin.shopkeepers.api.events.ShopkeeperAddedEvent;
 import com.nisovin.shopkeepers.api.events.ShopkeeperRemoveEvent;
@@ -281,7 +282,7 @@ public abstract class AbstractPlayerShopkeeper
 				ShopkeeperNaming shopkeeperNaming = SKShopkeepersPlugin.getInstance().getShopkeeperNaming();
 				if (shopkeeperNaming.requestNameChange(player, this, newName)) {
 					// Manually remove rename item from player's hand after this event is processed:
-					Bukkit.getScheduler().runTask(ShopkeepersPlugin.getInstance(), () -> {
+					SchedulerUtils.runAtEntityOrOmit(ShopkeepersPlugin.getInstance(), player, () -> {
 						ItemStack newItemInMainHand = ItemUtils.decreaseItemAmount(itemInMainHand, 1);
 						playerInventory.setItemInMainHand(newItemInMainHand);
 					});
@@ -1098,3 +1099,4 @@ public abstract class AbstractPlayerShopkeeper
 		}
 	}
 }
+

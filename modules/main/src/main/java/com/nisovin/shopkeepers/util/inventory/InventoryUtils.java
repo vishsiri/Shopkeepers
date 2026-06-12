@@ -17,6 +17,7 @@ import org.bukkit.inventory.PlayerInventory;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import com.nisovin.shopkeepers.api.ShopkeepersPlugin;
+import com.nisovin.shopkeepers.util.bukkit.SchedulerUtils;
 import com.nisovin.shopkeepers.api.internal.util.Unsafe;
 import com.nisovin.shopkeepers.api.util.UnmodifiableItemStack;
 import com.nisovin.shopkeepers.util.annotations.ReadOnly;
@@ -672,14 +673,14 @@ public final class InventoryUtils {
 
 	public static void updateInventoryLater(Player player) {
 		Validate.notNull(player, "player is null");
-		Bukkit.getScheduler().runTask(ShopkeepersPlugin.getInstance(), player::updateInventory);
+		SchedulerUtils.runAtEntityOrOmit(ShopkeepersPlugin.getInstance(), player, player::updateInventory);
 	}
 
 	// Only closes the player's open inventory view if it is still the specified view after the
 	// delay:
 	public static void closeInventoryDelayed(InventoryView inventoryView) {
 		Validate.notNull(inventoryView, "inventoryView is null");
-		Bukkit.getScheduler().runTask(ShopkeepersPlugin.getInstance(), () -> {
+		SchedulerUtils.runAtEntityOrOmit(ShopkeepersPlugin.getInstance(), inventoryView.getPlayer(), () -> {
 			InventoryView openInventoryView = inventoryView.getPlayer().getOpenInventory();
 			if (inventoryView == openInventoryView) {
 				inventoryView.close(); // Same as player.closeInventory()
@@ -689,7 +690,11 @@ public final class InventoryUtils {
 
 	public static void closeInventoryDelayed(Player player) {
 		// Cast to Runnable to resolve ambiguity error when compiling against Paper-API:
-		Bukkit.getScheduler().runTask(ShopkeepersPlugin.getInstance(), (Runnable) player::closeInventory);
+		SchedulerUtils.runAtEntityOrOmit(
+				ShopkeepersPlugin.getInstance(),
+				player,
+				(Runnable) player::closeInventory
+		);
 	}
 
 	// This can for example be used during the handling of inventory interaction events.
@@ -699,7 +704,7 @@ public final class InventoryUtils {
 			@ReadOnly @Nullable ItemStack itemStack
 	) {
 		Validate.notNull(inventory, "inventory is null");
-		Bukkit.getScheduler().runTask(ShopkeepersPlugin.getInstance(), () -> {
+		SchedulerUtils.runTaskOrOmit(ShopkeepersPlugin.getInstance(), () -> {
 			inventory.setItem(slot, itemStack); // This copies the item internally
 		});
 	}
@@ -707,3 +712,4 @@ public final class InventoryUtils {
 	private InventoryUtils() {
 	}
 }
+

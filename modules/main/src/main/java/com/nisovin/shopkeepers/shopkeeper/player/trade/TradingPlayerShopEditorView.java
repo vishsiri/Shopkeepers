@@ -11,6 +11,7 @@ import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 
 import com.nisovin.shopkeepers.api.ShopkeepersPlugin;
+import com.nisovin.shopkeepers.util.bukkit.SchedulerUtils;
 import com.nisovin.shopkeepers.api.internal.util.Unsafe;
 import com.nisovin.shopkeepers.api.util.UnmodifiableItemStack;
 import com.nisovin.shopkeepers.config.Settings.DerivedSettings;
@@ -94,7 +95,7 @@ public class TradingPlayerShopEditorView extends PlayerShopEditorView {
 		cursorClone.setAmount(1);
 		// Replace placeholder item, if this is one:
 		ItemStack cursorFinal = PlaceholderItems.replace(cursorClone);
-		Bukkit.getScheduler().runTask(ShopkeepersPlugin.getInstance(), () -> {
+		SchedulerUtils.runAtEntityOrOmit(ShopkeepersPlugin.getInstance(), view.getPlayer(), () -> {
 			if (view.getPlayer().getOpenInventory() != view) return;
 
 			Inventory inventory = view.getTopInventory();
@@ -132,3 +133,4 @@ public class TradingPlayerShopEditorView extends PlayerShopEditorView {
 		}
 	}
 }
+

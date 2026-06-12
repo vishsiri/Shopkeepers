@@ -14,6 +14,7 @@ import org.bukkit.event.HandlerList;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import com.nisovin.shopkeepers.SKShopkeepersPlugin;
+import com.nisovin.shopkeepers.util.bukkit.SchedulerUtils;
 import com.nisovin.shopkeepers.api.internal.util.Unsafe;
 import com.nisovin.shopkeepers.api.shopkeeper.Shopkeeper;
 import com.nisovin.shopkeepers.api.util.ChunkCoords;
@@ -96,7 +97,7 @@ public class ShopkeeperSpawner {
 
 		Bukkit.getPluginManager().registerEvents(listener, plugin);
 
-		Bukkit.getScheduler().runTaskLater(plugin, new CheckUnspawnableShopkeepersTask(), 5L);
+		SchedulerUtils.runTaskLaterOrOmit(plugin, new CheckUnspawnableShopkeepersTask(), 5L);
 	}
 
 	private class CheckUnspawnableShopkeepersTask implements Runnable {
@@ -854,3 +855,4 @@ public class ShopkeeperSpawner {
 		return unspawnableShopkeepers;
 	}
 }
+
